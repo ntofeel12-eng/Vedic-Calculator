@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vedic Calculator — Ultimate Scientific Calculator</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    crossorigin="anonymous"
+  />
+
+  <!-- math.js -->
+  <script src="https://cdn.jsdelivr.net/npm/mathjs@11.11.0/lib/browser/math.min.js"></script>
+
+  <!-- PWA Manifest -->
+  <link
+    rel="manifest"
+    href="data:application/manifest+json,{
+      &quot;name&quot;:&quot;Vedic Calculator&quot;,
+      &quot;short_name&quot;:&quot;VedicCalc&quot;,
+      &quot;display&quot;:&quot;standalone&quot;
+    }"
+  />
+
+  <style>
+    :root {
+      --bs-primary: #4f46e5;
+      --bs-primary-hover: #3730a3;
+      --bs-secondary: #6c757d;
+      --bs-bg-light: #f4f6fb;
+      --bs-bg-dark: #0f172a;
+      --bs-panel-light: #ffffff;
+      --bs-panel-dark: #020617;
+      --bs-text-light: #111111;
+      --bs-text-dark: #e5e7eb;
+      --btn-radius: 0.75rem;
+      --btn-padding: 1rem 1.2rem;
+      --transition-duration: 0.25s;
+      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    [data-theme="light"] {
+      --bg: var(--bs-bg-light);
+      --panel-bg: var(--bs-panel-light);
+      --text-color: var(--bs-text-light);
+      --btn-bg: #e5e7eb;
+      --btn-hover-bg: #d1d5db;
+      --accent-color: var(--bs-primary);
+      --accent-hover: var(--bs-primary-hover);
+    }
+
+    [data-theme="dark"] {
+      --bg: var(--bs-bg-dark);
+      --panel-bg: var(--bs-panel-dark);
+      --text-color: var(--bs-text-dark);
+      --btn-bg: #1e293b;
+      --btn-hover-bg: #334155;
+      --accent-color: #22d3ee;
+      --accent-hover: #0ea5e9;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-color);
+      font-family: var(--font-family);
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+      user-select: none;
+      transition: background-color var(--transition-duration);
+    }
+
+    .calculator {
+      background: var(--panel-bg);
+      border-radius: 1rem;
+      max-width: 440px;
+      width: 100%;
+      box-shadow: 0 12px 24px rgb(0 0 0 / 0.15);
+      display: flex;
+      flex-direction: column;
+      padding: 1rem 1.5rem 2rem;
+      transition: background-color var(--transition-duration);
+    }
+
+    /* Header */
+    .calculator-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 0.5rem;
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--accent-color);
+      user-select: text;
+    }
+
+    .calculator-header > span {
+      font-size: 1.4rem;
+      line-height: 1;
+      user-select: none;
+    }
+
+    /* Display */
+    #display {
+      width: 100%;
+      font-size: 1.8rem;
+      padding: 0.8rem 1rem;
+      border-radius: var(--btn-radius);
+      border: none;
+      background: var(--bg);
+      color: var(--text-color);
+      box-shadow: inset 0 0 5px rgb(0 0 0 / 0.1);
+      transition:
+        background-color var(--transition-duration),
+        color var(--transition-duration);
+      caret-color: var(--accent-color);
+      font-weight: 600;
+      text-align: right;
+      user-select: text;
+      outline-offset: 2px;
+    }
+    #display:focus {
+      outline: 2px solid var(--accent-color);
+      outline-offset: 2px;
+      background: var(--panel-bg);
+    }
+
+    /* Controls */
+    .btn-control {
+      border-radius: var(--btn-radius);
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.6rem 1.2rem;
+      min-width: 72px;
+      transition: background-color var(--transition-duration);
+      user-select: none;
+    }
+    .btn-control:focus-visible {
+      outline: 3px solid var(--accent-color);
+      outline-offset: 2px;
+      box-shadow: none;
+    }
+    .btn-control.locked {
+      opacity: 0.4;
+      pointer-events: none;
+      cursor: default;
+    }
+
+    /* Calculator buttons grid */
+    .btn-grid {
+      margin-top: 0.8rem;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.7rem;
+    }
+
+    /* Calculator buttons */
+    .btn-calc {
+      border-radius: var(--btn-radius);
+      background-color: var(--btn-bg);
+      color: var(--text-color);
+      font-size: 1.2rem;
+      font-weight: 600;
+      padding: var(--btn-padding);
+      box-shadow: 0 3px 5px rgb(0 0 0 / 0.1);
+      transition:
+        background-color var(--transition-duration),
+        color var(--transition-duration),
+        transform 0.1s ease;
+      user-select: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-calc:focus-visible {
+      outline: 3px solid var(--accent-color);
+      outline-offset: 2px;
+      box-shadow: none;
+    }
+
+    .btn-calc:hover:not(:disabled) {
+      background-color: var(--btn-hover-bg);
+    }
+
+    .btn-calc:active:not(:disabled) {
+      transform: scale(0.95);
+      transition: transform 0.1s ease;
+    }
+
+    .btn-calc.equal,
+    .btn-calc.clear {
+      background-color: var(--accent-color);
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 4px 8px rgb(0 0 0 / 0.2);
+    }
+    .btn-calc.equal:hover,
+    .btn-calc.clear:hover {
+      background-color: var(--accent-hover);
+    }
+
+    /* Panels for history, steps */
+    .panel {
+      background: var(--bg);
+      color: var(--text-color);
+      border-radius: var(--btn-radius);
+      padding: 0.8rem 1rem;
+      margin-top: 0.8rem;
+      font-size: 0.9rem;
+      max-height: 140px;
+      overflow-y: auto;
+      box-shadow: inset 0 0 10px rgb(0 0 0 / 0.07);
+      display: none;
+      user-select: text;
+      white-space: pre-wrap;
+    }
+
+    /* Option panels toggled */
+    .option-panel {
+      margin-top: 0.7rem;
+      background: var(--bg);
+      border-radius: var(--btn-radius);
+      padding: 0.8rem 1rem;
+      box-shadow: inset 0 0 12px rgb(0 0 0 / 0.07);
+      display: none;
+    }
+
+    .option-panel strong {
+      user-select: none;
+    }
+
+    /* Graph canvas styling */
+    #graph {
+      width: 100%;
+      height: 220px;
+      border-radius: var(--btn-radius);
+      background-color: #fff;
+      margin-top: 0.5rem;
+      box-shadow: 0 0 6px rgb(0 0 0 / 0.12);
+      display: block;
+      user-select: none;
+    }
+
+    /* Handwriting canvas styling */
+    #ink {
+      width: 100%;
+      max-width: 100%;
+      height: 120px;
+      border-radius: var(--btn-radius);
+      background-color: #fff;
+      box-shadow: 0 0 6px rgb(0 0 0 / 0.12);
+      touch-action: none;
+      user-select: none;
+    }
+
+    /* Buttons below handwriting */
+    .ink-controls {
+      margin-top: 0.4rem;
+      display: flex;
+      gap: 0.8rem;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 480px) {
+      .btn-calc {
+        font-size: 1rem;
+        padding: 0.75rem 0.8rem;
+      }
+      .btn-control {
+        min-width: 60px;
+        font-size: 0.85rem;
+        padding: 0.5rem 0.8rem;
+      }
+    }
+  </style>
+</head>
+
+<body data-theme="dark">
+  <main class="calculator" role="application" aria-label="Vedic Calculator">
+    <header class="calculator-header" aria-live="polite">
+      <span>Vedic Calculator</span>
+      <span aria-hidden="true">🕉</span>
+    </header>
+
+    <input
+      id="display"
+      aria-label="Calculator input"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"
+      type="text"
+      role="textbox"
+      inputmode="text"
+      aria-multiline="false"
+      aria-live="polite"
+      aria-atomic="true"
+    />
+
+    <section
+      class="d-flex flex-wrap gap-2 mt-3 justify-content-center"
+      aria-label="Calculator controls"
+    >
+      <button
+        type="button"
+        class="btn btn-control btn-secondary"
+        id="themeToggleBtn"
+        aria-pressed="false"
+        title="Toggle Light/Dark Theme"
+        >Theme</button
+      >
+      <button
+        type="button"
+        class="btn btn-control btn-secondary"
+        id="vedicToggleBtn"
+        aria-pressed="false"
+        title="Toggle Vedic Mode"
+        >Vedic</button
+      >
+      <button
+        type="button"
+        class="btn btn-control btn-secondary"
+        id="angleToggleBtn"
+        aria-pressed="true"
+        title="Toggle Angle Mode (Degrees/Radians)"
+        >DEG</button
+      >
+      <button
+        type="button"
+        class="btn btn-control btn-secondary"
+        id="voiceBtn"
+        title="Start Voice Input"
+        >🎤</button
+      >
+      <button
+        type="button"
+        class="btn btn-control btn-secondary"
+        id="examToggleBtn"
+        aria-pressed="false"
+        title="Toggle Exam Mode"
+        >Exam</button
+      >
+      <button
+        type="button"
+        class="btn btn-control btn-secondary"
+        id="graphToggleBtn"
+        aria-pressed="false"
+        title="Show/Hide Graph Panel"
+        >Graph</button
+      >
+      <button
+        type="button"
+        class="btn btn-control btn-secondary"
+        id="inkToggleBtn"
+        aria-pressed="false"
+        title="Show/Hide Handwriting Panel"
+        >Handwriting</button
+      >
+    </section>
+
+    <section class="btn-grid" aria-label="Calculator keypad">
+      <button type="button" class="btn-calc" data-value="7">7</button>
+      <button type="button" class="btn-calc" data-value="8">8</button>
+      <button type="button" class="btn-calc" data-value="9">9</button>
+      <button type="button" class="btn-calc" data-value="/">÷</button>
+      <button type="button" class="btn-calc" data-value="(">(</button>
+
+      <button type="button" class="btn-calc" data-value="4">4</button>
+      <button type="button" class="btn-calc" data-value="5">5</button>
+      <button type="button" class="btn-calc" data-value="6">6</button>
+      <button type="button" class="btn-calc" data-value="*">×</button>
+      <button type="button" class="btn-calc" data-value=")">)</button>
+
+      <button type="button" class="btn-calc" data-value="1">1</button>
+      <button type="button" class="btn-calc" data-value="2">2</button>
+      <button type="button" class="btn-calc" data-value="3">3</button>
+      <button type="button" class="btn-calc" data-value="-">−</button>
+      <button type="button" class="btn-calc" data-value="^">^</button>
+
+      <button type="button" class="btn-calc" data-value="0">0</button>
+      <button type="button" class="btn-calc" data-value=".">.</button>
+      <button type="button" class="btn-calc" data-value="+">+</button>
+      <button type="button" class="btn-calc" data-value="sin(">sin</button>
+      <button type="button" class="btn-calc" data-value="cos(">cos</button>
+
+      <button type="button" class="btn-calc" data-value="tan(">tan</button>
+      <button type="button" class="btn-calc equal" id="equalBtn">=</button>
+      <button type="button" class="btn-calc clear" id="clearBtn">C</button>
+    </section>
+
+    <section id="steps" class="panel" aria-live="polite" aria-label="Calculation steps"></section>
+    <section id="history" class="panel" aria-live="polite" aria-label="Calculation history"></section>
+
+    <section id="graphPanel" class="option-panel" aria-label="Graph plotting panel">
+      <strong>Graph y = f(x)</strong><br />
+      <button type="button" class="btn btn-sm btn-primary mt-2" id="plotBtn">Plot</button>
+      <canvas id="graph" aria-label="Graph plotting canvas"></canvas>
+    </section>
+
+    <section
+      id="inkPanel"
+      class="option-panel"
+      aria-label="Handwriting input panel"
+    >
+      <strong>Handwriting Input</strong><br />
+      <canvas id="ink" width="300" height="120"></canvas>
+      <div class="ink-controls mt-2">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="insertInkBtn">
+          Insert
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-danger" id="clearInkBtn">
+          Clear
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    /* ---------- STATE ---------- */
+    let vedic = false,
+      deg = true,
+      exam = false,
+      history = [];
+    const display = document.getElementById("display");
+
+    /* ---------- CORE ---------- */
+    function add(v) {
+      if (exam) return;
+      display.value += v;
+      display.focus();
+    }
+    function clearDisplay() {
+      if (exam) return;
+      display.value = "";
+      display.focus();
+    }
+    function toggleTheme() {
+      const body = document.body;
+      if (body.dataset.theme === "dark") {
+        body.dataset.theme = "light";
+        themeToggleBtn.setAttribute("aria-pressed", "false");
+      } else {
+        body.dataset.theme = "dark";
+        themeToggleBtn.setAttribute("aria-pressed", "true");
+      }
+      display.focus();
+    }
+    function toggleVedic() {
+      if (exam) return;
+      vedic = !vedic;
+      vedicToggleBtn.setAttribute("aria-pressed", vedic.toString());
+      display.focus();
+    }
+    function toggleAngle() {
+      if (exam) return;
+      deg = !deg;
+      angleToggleBtn.textContent = deg ? "DEG" : "RAD";
+      angleToggleBtn.setAttribute("aria-pressed", deg.toString());
+      display.focus();
+    }
+    function toggleExam() {
+      exam = !exam;
+      examToggleBtn.setAttribute("aria-pressed", exam.toString());
+      const controls = [
+        ...document.querySelectorAll(
+          ".btn-control, .btn-calc:not(#clearBtn):not(#equalBtn)"
+        ),
+      ];
+      controls.forEach((btn) => {
+        btn.classList.toggle("locked", exam);
+      });
+      if (exam) {
+        display.readOnly = true;
+        clearDisplay();
+      } else {
+        display.readOnly = false;
+      }
+      display.focus();
+    }
+
+    /* ---------- TRIG OVERRIDE ---------- */
+    math.import(
+      {
+        sin: (x) => Math.sin(deg ? (x * Math.PI) / 180 : x),
+        cos: (x) => Math.cos(deg ? (x * Math.PI) / 180 : x),
+        tan: (x) => Math.tan(deg ? (x * Math.PI) / 180 : x),
+      },
+      { override: true }
+    );
+
+    /* ---------- STEP EXPANSION ---------- */
+    function expandSteps(expr) {
+      try {
+        const node = math.parse(expr);
+        const steps = [];
+        node.traverse((n) => {
+          if (n.isOperatorNode) steps.push(n.toString());
+        });
+        return steps;
+      } catch {
+        return [];
+      }
+    }
+
+    /* ---------- CALCULATE ---------- */
+    function calculate() {
+      if (exam) return;
+      try {
+        const expr = display.value;
+        const result = math.evaluate(expr);
+        const stepsArr = expandSteps(expr);
+        stepsPanel.style.display = "block";
+        stepsPanel.innerHTML =
+          stepsArr.map((s) => "→ " + s).join("<br>") + "<br>= " + result;
+        history.unshift(expr + " = " + result);
+        if (history.length > 50) history.pop();
+        historyPanel.style.display = "block";
+        historyPanel.innerHTML = history
+          .slice(0, 10)
+          .map((h) => h)
+          .join("<br>");
+        display.value = result.toString();
+        display.focus();
+      } catch (e) {
+        stepsPanel.innerHTML = "Error: " + e.message;
+      }
+    }
+
+    /* ---------- HISTORY & STEPS ---------- */
+    const stepsPanel = document.getElementById("steps");
+    const historyPanel = document.getElementById("history");
+
+    /* ---------- BUTTON EVENTS ---------- */
+    document.querySelectorAll(".btn-calc").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (btn.id === "equalBtn") {
+          calculate();
+        } else if (btn.id === "clearBtn") {
+          clearDisplay();
+          stepsPanel.style.display = "none";
+          historyPanel.style.display = "none";
+        } else {
+          add(btn.getAttribute("data-value"));
+        }
+      });
+    });
+
+    /* ---------- CONTROL BUTTONS ---------- */
+    const themeToggleBtn = document.getElementById("themeToggleBtn");
+    const vedicToggleBtn = document.getElementById("vedicToggleBtn");
+    const angleToggleBtn = document.getElementById("angleToggleBtn");
+    const examToggleBtn = document.getElementById("examToggleBtn");
+    const graphToggleBtn = document.getElementById("graphToggleBtn");
+    const inkToggleBtn = document.getElementById("inkToggleBtn");
+    const voiceBtn = document.getElementById("voiceBtn");
+
+    themeToggleBtn.addEventListener("click", toggleTheme);
+    vedicToggleBtn.addEventListener("click", toggleVedic);
+    angleToggleBtn.addEventListener("click", toggleAngle);
+    examToggleBtn.addEventListener("click", toggleExam);
+
+    /* ---------- GRAPH PANEL ---------- */
+    const graphPanel = document.getElementById("graphPanel");
+    const graphToggleBtnEl = graphToggleBtn;
+    const graphCanvas = document.getElementById("graph");
+    const plotBtn = document.getElementById("plotBtn");
+    const ctx = graphCanvas.getContext("2d");
+    graphToggleBtnEl.addEventListener("click", () => {
+      const visible = graphPanel.style.display === "block";
+      graphPanel.style.display = visible ? "none" : "block";
+      graphToggleBtnEl.setAttribute("aria-pressed", (!visible).toString());
+    });
+
+    function plotGraph() {
+      try {
+        const expr = display.value;
+        if (!expr) return alert("Enter expression to plot y=f(x)");
+        const width = graphCanvas.width;
+        const height = graphCanvas.height;
+        ctx.clearRect(0, 0, width, height);
+        ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue(
+          "--accent-color"
+        );
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        // Scale & offset
+        const scaleX = 20;
+        const scaleY = 20;
+        const offsetX = width / 2;
+        const offsetY = height / 2;
+        for (let px = 0; px <= width; px++) {
+          const x = (px - offsetX) / scaleX;
+          let y = 0;
+          try {
+            y = math.evaluate(expr.replace(/x/g, `(${x})`));
+            if (!isFinite(y)) y = NaN;
+          } catch {
+            y = NaN;
+          }
+          const py = offsetY - y * scaleY;
+          if (px === 0) {
+            ctx.moveTo(px, py);
+          } else if (!isNaN(py)) {
+            ctx.lineTo(px, py);
+          }
+        }
+        ctx.stroke();
+      } catch (e) {
+        alert("Error plotting graph: " + e.message);
+      }
+    }
+    plotBtn.addEventListener("click", plotGraph);
+
+    /* ---------- HANDWRITING PANEL ---------- */
+    const inkPanel = document.getElementById("inkPanel");
+    const inkToggleBtnEl = inkToggleBtn;
+    const inkCanvas = document.getElementById("ink");
+    const insertInkBtn = document.getElementById("insertInkBtn");
+    const clearInkBtn = document.getElementById("clearInkBtn");
+
+    inkToggleBtnEl.addEventListener("click", () => {
+      const visible = inkPanel.style.display === "block";
+      inkPanel.style.display = visible ? "none" : "block";
+      inkToggleBtnEl.setAttribute("aria-pressed", (!visible).toString());
+    });
+
+    // Simple handwriting canvas
+    const inkCtx = inkCanvas.getContext("2d");
+    inkCtx.strokeStyle = "#222";
+    inkCtx.lineWidth = 3;
+    inkCtx.lineCap = "round";
+
+    let inkDrawing = false;
+    let lastX, lastY;
+
+    inkCanvas.addEventListener("pointerdown", (e) => {
+      if (exam) return;
+      inkDrawing = true;
+      const rect = inkCanvas.getBoundingClientRect();
+      lastX = e.clientX - rect.left;
+      lastY = e.clientY - rect.top;
+    });
+    inkCanvas.addEventListener("pointermove", (e) => {
+      if (!inkDrawing) return;
+      const rect = inkCanvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      inkCtx.beginPath();
+      inkCtx.moveTo(lastX, lastY);
+      inkCtx.lineTo(x, y);
+      inkCtx.stroke();
+      lastX = x;
+      lastY = y;
+    });
+    inkCanvas.addEventListener("pointerup", () => (inkDrawing = false));
+    inkCanvas.addEventListener("pointerleave", () => (inkDrawing = false));
+
+    clearInkBtn.addEventListener("click", () => {
+      inkCtx.clearRect(0, 0, inkCanvas.width, inkCanvas.height);
+    });
+
+    // Placeholder: Insert handwriting logic (OCR recognition) is complex.
+    // Here, we simulate insertion of fixed expression on Insert click.
+    insertInkBtn.addEventListener("click", () => {
+      // For demo, insert a fixed value or detected text placeholder
+      if (exam) return;
+      const recognizedText = "sin(45)"; // Replace with actual recognition logic
+      add(recognizedText);
+      inkCtx.clearRect(0, 0, inkCanvas.width, inkCanvas.height);
+    });
+
+    /* ---------- VOICE INPUT ---------- */
+    voiceBtn.addEventListener("click", () => {
+      if (exam) return alert("Voice input disabled in Exam Mode.");
+      if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
+        return alert("Speech recognition not supported in this browser.");
+      }
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.start();
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript.trim();
+        add(transcript);
+      };
+
+      recognition.onerror = (event) => {
+        alert("Voice recognition error: " + event.error);
+      };
+    });
+
+    /* ---------- PWA Registration ---------- */
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("sw.js")
+        .catch(() => console.warn("Service Worker registration failed"));
+    }
+
+    /* ---------- KEYBOARD SUPPORT ---------- */
+    display.addEventListener("keydown", (e) => {
+      if (exam) {
+        e.preventDefault();
+        return;
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        calculate();
+      } else if (e.key === "Escape") {
+        clearDisplay();
+        stepsPanel.style.display = "none";
+        historyPanel.style.display = "none";
+      }
+    });
+
+    /* ---------- INITIALIZATION ---------- */
+    display.focus();
+  </script>
+</body>
+</html>
